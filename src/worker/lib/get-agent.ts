@@ -57,5 +57,5 @@ export async function getAgentStub(
   env: Cloudflare.Env,
   slug: string,
 ): Promise<DurableObjectStub<DownyAgent>> {
-  return getAgentByName(env.DownyAgent, slug);
+  return getAgentByName<Cloudflare.Env, DownyAgent>(env.DownyAgent, slug);
 }
