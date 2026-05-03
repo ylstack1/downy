@@ -3,6 +3,7 @@ import { getAgentByName } from "agents";
 import { z } from "zod";
 
 import { getAgent } from "../../db/profile";
+import type { DownyAgent } from "../DownyAgent";
 
 const inputSchema = z.object({
   slug: z
@@ -59,7 +60,10 @@ export function createReadPeerAgentTool(args: {
         return { error: `Agent is archived: ${slug}` };
       }
 
-      const stub = await getAgentByName(args.env.DownyAgent, slug);
+      const stub = await getAgentByName<Cloudflare.Env, DownyAgent>(
+        args.env.DownyAgent,
+        slug,
+      );
       try {
         switch (op) {
           case "describe":
