@@ -228,39 +228,88 @@ function rowToAiProvider(row: AiProviderRow): AiProviderRecord {
   };
 }
 
-export async function listAiProviders(db: D1Database): Promise<AiProviderRecord[]> {
-  const result = await db.prepare("SELECT * FROM ai_providers ORDER BY created_at").all<AiProviderRow>();
+export async function listAiProviders(
+  db: D1Database,
+): Promise<AiProviderRecord[]> {
+  const result = await db
+    .prepare("SELECT * FROM ai_providers ORDER BY created_at")
+    .all<AiProviderRow>();
   return (result.results ?? []).map(rowToAiProvider);
 }
 
-export async function getAiProvider(db: D1Database, id: string): Promise<AiProviderRecord | null> {
-  const row = await db.prepare("SELECT * FROM ai_providers WHERE id = ?").bind(id).first<AiProviderRow>();
+export async function getAiProvider(
+  db: D1Database,
+  id: string,
+): Promise<AiProviderRecord | null> {
+  const row = await db
+    .prepare("SELECT * FROM ai_providers WHERE id = ?")
+    .bind(id)
+    .first<AiProviderRow>();
   return row ? rowToAiProvider(row) : null;
 }
 
-export async function createAiProvider(db: D1Database, input: Omit<AiProviderRecord, "createdAt">): Promise<AiProviderRecord> {
+export async function createAiProvider(
+  db: D1Database,
+  input: Omit<AiProviderRecord, "createdAt">,
+): Promise<AiProviderRecord> {
   const now = Date.now();
-  await db.prepare(
-    "INSERT INTO ai_providers (id, name, type, api_key, endpoint, is_default, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(input.id, input.name, input.type, input.apiKey, input.endpoint, input.isDefault ? 1 : 0, now).run();
+  await db
+    .prepare(
+      "INSERT INTO ai_providers (id, name, type, api_key, endpoint, is_default, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(
+      input.id,
+      input.name,
+      input.type,
+      input.apiKey,
+      input.endpoint,
+      input.isDefault ? 1 : 0,
+      now,
+    )
+    .run();
   return { ...input, createdAt: now };
 }
 
-export async function updateAiProvider(db: D1Database, id: string, input: Partial<Omit<AiProviderRecord, "id" | "createdAt">>): Promise<void> {
+export async function updateAiProvider(
+  db: D1Database,
+  id: string,
+  input: Partial<Omit<AiProviderRecord, "id" | "createdAt">>,
+): Promise<void> {
   const sets: string[] = [];
   const binds: any[] = [];
-  if (input.name !== undefined) { sets.push("name = ?"); binds.push(input.name); }
-  if (input.type !== undefined) { sets.push("type = ?"); binds.push(input.type); }
-  if (input.apiKey !== undefined) { sets.push("api_key = ?"); binds.push(input.apiKey); }
-  if (input.endpoint !== undefined) { sets.push("endpoint = ?"); binds.push(input.endpoint); }
-  if (input.isDefault !== undefined) { sets.push("is_default = ?"); binds.push(input.isDefault ? 1 : 0); }
-  
+  if (input.name !== undefined) {
+    sets.push("name = ?");
+    binds.push(input.name);
+  }
+  if (input.type !== undefined) {
+    sets.push("type = ?");
+    binds.push(input.type);
+  }
+  if (input.apiKey !== undefined) {
+    sets.push("api_key = ?");
+    binds.push(input.apiKey);
+  }
+  if (input.endpoint !== undefined) {
+    sets.push("endpoint = ?");
+    binds.push(input.endpoint);
+  }
+  if (input.isDefault !== undefined) {
+    sets.push("is_default = ?");
+    binds.push(input.isDefault ? 1 : 0);
+  }
+
   if (sets.length === 0) return;
   binds.push(id);
-  await db.prepare(`UPDATE ai_providers SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
+  await db
+    .prepare(`UPDATE ai_providers SET ${sets.join(", ")} WHERE id = ?`)
+    .bind(...binds)
+    .run();
 }
 
-export async function deleteAiProvider(db: D1Database, id: string): Promise<void> {
+export async function deleteAiProvider(
+  db: D1Database,
+  id: string,
+): Promise<void> {
   await db.prepare("DELETE FROM ai_providers WHERE id = ?").bind(id).run();
 }
 
@@ -271,10 +320,22 @@ export type SessionRecord = {
   createdAt: number;
 };
 
-export async function listSessions(db: D1Database, agentSlug: string): Promise<SessionRecord[]> {
-  const result = await db.prepare("SELECT * FROM sessions WHERE agent_slug = ? ORDER BY created_at DESC")
-    .bind(agentSlug).all<{ id: string; agent_slug: string; title: string; created_at: number }>();
-  return (result.results ?? []).map(row => ({
+export async function listSessions(
+  db: D1Database,
+  agentSlug: string,
+): Promise<SessionRecord[]> {
+  const result = await db
+    .prepare(
+      "SELECT * FROM sessions WHERE agent_slug = ? ORDER BY created_at DESC",
+    )
+    .bind(agentSlug)
+    .all<{
+      id: string;
+      agent_slug: string;
+      title: string;
+      created_at: number;
+    }>();
+  return (result.results ?? []).map((row) => ({
     id: row.id,
     agentSlug: row.agent_slug,
     title: row.title,
@@ -282,10 +343,17 @@ export async function listSessions(db: D1Database, agentSlug: string): Promise<S
   }));
 }
 
-export async function createSession(db: D1Database, input: { id: string, agentSlug: string, title: string }): Promise<SessionRecord> {
+export async function createSession(
+  db: D1Database,
+  input: { id: string; agentSlug: string; title: string },
+): Promise<SessionRecord> {
   const now = Date.now();
-  await db.prepare("INSERT INTO sessions (id, agent_slug, title, created_at) VALUES (?, ?, ?, ?)")
-    .bind(input.id, input.agentSlug, input.title, now).run();
+  await db
+    .prepare(
+      "INSERT INTO sessions (id, agent_slug, title, created_at) VALUES (?, ?, ?, ?)",
+    )
+    .bind(input.id, input.agentSlug, input.title, now)
+    .run();
   return { ...input, createdAt: now };
 }
 
@@ -293,15 +361,31 @@ export async function deleteSession(db: D1Database, id: string): Promise<void> {
   await db.prepare("DELETE FROM sessions WHERE id = ?").bind(id).run();
 }
 
-export async function getTelegramChat(db: D1Database, telegramChatId: string): Promise<{ agentSlug: string, sessionId: string } | null> {
-  const row = await db.prepare("SELECT agent_slug, session_id FROM telegram_chats WHERE telegram_chat_id = ?")
-    .bind(telegramChatId).first<{ agent_slug: string, session_id: string }>();
+export async function getTelegramChat(
+  db: D1Database,
+  telegramChatId: string,
+): Promise<{ agentSlug: string; sessionId: string } | null> {
+  const row = await db
+    .prepare(
+      "SELECT agent_slug, session_id FROM telegram_chats WHERE telegram_chat_id = ?",
+    )
+    .bind(telegramChatId)
+    .first<{ agent_slug: string; session_id: string }>();
   return row ? { agentSlug: row.agent_slug, sessionId: row.session_id } : null;
 }
 
-export async function setTelegramChat(db: D1Database, telegramChatId: string, agentSlug: string, sessionId: string): Promise<void> {
-  await db.prepare("INSERT INTO telegram_chats (telegram_chat_id, agent_slug, session_id) VALUES (?, ?, ?) ON CONFLICT (telegram_chat_id) DO UPDATE SET agent_slug = excluded.agent_slug, session_id = excluded.session_id")
-    .bind(telegramChatId, agentSlug, sessionId).run();
+export async function setTelegramChat(
+  db: D1Database,
+  telegramChatId: string,
+  agentSlug: string,
+  sessionId: string,
+): Promise<void> {
+  await db
+    .prepare(
+      "INSERT INTO telegram_chats (telegram_chat_id, agent_slug, session_id) VALUES (?, ?, ?) ON CONFLICT (telegram_chat_id) DO UPDATE SET agent_slug = excluded.agent_slug, session_id = excluded.session_id",
+    )
+    .bind(telegramChatId, agentSlug, sessionId)
+    .run();
 }
 
 export async function readPreferences(db: D1Database): Promise<Preferences> {

@@ -22,7 +22,7 @@ export function slugFromRequest(request: Request): string {
   if (slug !== DEFAULT_AGENT_SLUG && !isValidSlug(slug)) {
     throw new Error(`Invalid agent slug: ${slug}`);
   }
-  
+
   const sessionId = request.headers.get("X-Session-Id");
   if (sessionId) {
     // Basic validation for sessionId to prevent path traversal etc if used in filenames
@@ -31,7 +31,7 @@ export function slugFromRequest(request: Request): string {
     }
     return `${slug}:${sessionId}`;
   }
-  
+
   return slug;
 }
 

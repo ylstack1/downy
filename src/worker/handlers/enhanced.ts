@@ -6,7 +6,6 @@ import {
   listSessions,
   createSession,
   deleteSession,
-  writePreference,
   getAiProvider,
   getTelegramChat,
   setTelegramChat,
@@ -20,12 +19,16 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }
 
-async function sendTelegramMessage(env: Cloudflare.Env, chatId: string, text: string) {
+async function sendTelegramMessage(
+  env: Cloudflare.Env,
+  chatId: string,
+  text: string,
+) {
   const token = (env as any).TELEGRAM_BOT_TOKEN;
   if (!token) return;
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text }),
   });
 }
@@ -35,7 +38,7 @@ export async function handleEnhancedRequest(
   env: Cloudflare.Env,
 ): Promise<Response> {
   const url = new URL(request.url);
-  
+
   // Provider Management
   if (url.pathname === "/api/providers") {
     if (request.method === "GET") {
@@ -46,12 +49,12 @@ export async function handleEnhancedRequest(
       const body: any = await request.json();
       const provider = await createAiProvider(env.DB, {
         id: crypto.randomUUID(),
-        ...body
+        ...body,
       });
       return json({ provider });
     }
   }
-  
+
   if (url.pathname.startsWith("/api/providers/")) {
     const id = url.pathname.split("/").pop()!;
     if (request.method === "PUT") {
@@ -66,8 +69,40 @@ export async function handleEnhancedRequest(
     if (url.pathname.endsWith("/fetch-models") && request.method === "POST") {
       const provider = await getAiProvider(env.DB, id);
       if (!provider) return json({ error: "Provider not found" }, 404);
-      // Implementation of fetch models would query the provider API
-      return json({ models: ["gpt-4o", "gpt-4-turbo", "claude-3-5-sonnet-latest"] });
+
+      try {
+        if (provider.type === "openai" || provider.type === "openrouter") {
+          const endpoint =
+            provider.endpoint ||
+            (provider.type === "openrouter"
+              ? "https://openrouter.ai/api/v1"
+              : "https://api.openai.com/v1");
+          const res = await fetch(`${endpoint}/models`, {
+            headers: { Authorization: `Bearer ${provider.apiKey}` },
+          });
+          const data: any = await res.json();
+          const models = data.data?.map((m: any) => m.id) || [];
+          return json({ models });
+        }
+
+        if (provider.type === "google") {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${provider.apiKey}`,
+          );
+          const data: any = await res.json();
+          const models =
+            data.models?.map((m: any) => m.name.replace("models/", "")) || [];
+          return json({ models });
+        }
+
+        // Fallback for others
+        return json({
+          models: ["gpt-4o", "claude-3-5-sonnet-latest", "gemini-1.5-pro"],
+        });
+      } catch (err) {
+        console.error("Failed to fetch models", err);
+        return json({ error: "Failed to fetch models" }, 500);
+      }
     }
   }
 
@@ -114,10 +149,14 @@ export async function handleEnhancedRequest(
       }
 
       if (text === "/start") {
-        await sendTelegramMessage(env, chatId, "Welcome! Please link this chat to an agent session in the Web UI, or use /link <agent-slug>.");
+        await sendTelegramMessage(
+          env,
+          chatId,
+          "Welcome! Please link this chat to an agent session in the Web UI, or use /link <agent-slug>.",
+        );
         return json({ ok: true });
       }
-      
+
       if (text.startsWith("/link ")) {
         const slug = text.split(" ")[1];
         if (slug) {
@@ -134,30 +173,43 @@ export async function handleEnhancedRequest(
 
       const mapping = await getTelegramChat(env.DB, chatId);
       if (mapping) {
-        const stub = await getAgentStub(env, `${mapping.agentSlug}:${mapping.sessionId}`);
-        
+        const stub = await getAgentStub(
+          env,
+          `${mapping.agentSlug}:${mapping.sessionId}`,
+        );
+
         if (text === "/help") {
           const skills = await stub.listAgentSkills();
-          const helpText = "Available skills:\n" + skills.map(s => `/${s.name} - ${s.description}`).join("\n");
+          const helpText =
+            "Available skills:\n" +
+            skills.map((s) => `/${s.name} - ${s.description}`).join("\n");
           await sendTelegramMessage(env, chatId, helpText);
         } else if (text.startsWith("/")) {
           // Could implement custom commands based on skills
-          await stub.saveMessages([{
-            id: crypto.randomUUID(),
-            role: "user",
-            parts: [{ type: "text", text }],
-            metadata: { telegram: true, chatId }
-          }]);
+          await stub.saveMessages([
+            {
+              id: crypto.randomUUID(),
+              role: "user",
+              parts: [{ type: "text", text }],
+              metadata: { telegram: true, chatId },
+            },
+          ]);
         } else {
-          await stub.saveMessages([{
-            id: crypto.randomUUID(),
-            role: "user",
-            parts: [{ type: "text", text }],
-            metadata: { telegram: true, chatId }
-          }]);
+          await stub.saveMessages([
+            {
+              id: crypto.randomUUID(),
+              role: "user",
+              parts: [{ type: "text", text }],
+              metadata: { telegram: true, chatId },
+            },
+          ]);
         }
       } else {
-        await sendTelegramMessage(env, chatId, "This chat is not linked to any agent. Use /link <agent-slug> to link.");
+        await sendTelegramMessage(
+          env,
+          chatId,
+          "This chat is not linked to any agent. Use /link <agent-slug> to link.",
+        );
       }
       return json({ ok: true });
     }

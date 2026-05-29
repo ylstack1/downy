@@ -23,6 +23,7 @@ import {
   updateProvider,
   deleteProvider,
   getSystemStatus,
+  connectMcpServer,
 } from "./api-client";
 import { queryKeys } from "./query-keys";
 
@@ -171,8 +172,12 @@ export function useWriteWorkspaceFile() {
     mutationFn: (vars: { slug: string; path: string; content: string }) =>
       writeWorkspaceFile(vars.slug, vars.path, vars.content),
     onSuccess: (_, vars) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFiles(vars.slug) });
-      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFile(vars.slug, vars.path) });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.workspaceFiles(vars.slug),
+      });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.workspaceFile(vars.slug, vars.path),
+      });
       if (vars.path.startsWith("skills/")) {
         void qc.invalidateQueries({ queryKey: queryKeys.skills(vars.slug) });
       }
@@ -186,8 +191,12 @@ export function useDeleteWorkspaceFile() {
     mutationFn: (vars: { slug: string; path: string }) =>
       deleteWorkspaceFile(vars.slug, vars.path),
     onSuccess: (_, vars) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFiles(vars.slug) });
-      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFile(vars.slug, vars.path) });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.workspaceFiles(vars.slug),
+      });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.workspaceFile(vars.slug, vars.path),
+      });
       if (vars.path.startsWith("skills/")) {
         void qc.invalidateQueries({ queryKey: queryKeys.skills(vars.slug) });
       }
@@ -202,7 +211,9 @@ export function useWriteCoreFile() {
       writeCoreFile(vars.slug, vars.path, vars.content),
     onSuccess: (_, vars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.coreFiles(vars.slug) });
-      void qc.invalidateQueries({ queryKey: queryKeys.coreFile(vars.slug, vars.path) });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.coreFile(vars.slug, vars.path),
+      });
     },
   });
 }
@@ -212,6 +223,26 @@ export function useDeleteMcpServer() {
   return useMutation({
     mutationFn: (vars: { slug: string; id: string }) =>
       deleteMcpServer(vars.slug, vars.id),
+    onSuccess: (_, vars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.mcpServers(vars.slug) });
+    },
+  });
+}
+
+export function useConnectMcpServer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: {
+      slug: string;
+      name: string;
+      url: string;
+      transport?: string;
+    }) =>
+      connectMcpServer(vars.slug, {
+        name: vars.name,
+        url: vars.url,
+        transport: vars.transport,
+      }),
     onSuccess: (_, vars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.mcpServers(vars.slug) });
     },
@@ -242,8 +273,7 @@ export function useCreateSession() {
 export function useDeleteSession() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { slug: string; id: string }) =>
-      deleteSession(vars.id),
+    mutationFn: (vars: { slug: string; id: string }) => deleteSession(vars.id),
     onSuccess: (_, vars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.sessions(vars.slug) });
     },

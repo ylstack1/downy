@@ -40,7 +40,11 @@ async function failedRequest(res: Response): Promise<Error> {
   return new Error(`Request failed (${String(res.status)}): ${detail}`);
 }
 
-function withHeaders(slug: string, sessionId?: string, init?: RequestInit): RequestInit {
+function withHeaders(
+  slug: string,
+  sessionId?: string,
+  init?: RequestInit,
+): RequestInit {
   const merged = new Headers(init?.headers);
   merged.set("X-Agent-Slug", slug);
   if (sessionId) {
@@ -193,8 +197,7 @@ export async function transcribeAudio(
     try {
       const body = (await res.json()) as { error?: string };
       if (body.error) message = body.error;
-    } catch {
-    }
+    } catch {}
     throw new Error(message);
   }
 
@@ -240,6 +243,21 @@ export async function listMcpServers(
     withHeaders(slug),
   );
   return data.servers;
+}
+
+export async function connectMcpServer(
+  slug: string,
+  config: { name: string; url: string; transport?: string },
+): Promise<void> {
+  await request(
+    "/api/mcp-servers",
+    OkResponseSchema,
+    withHeaders(slug, undefined, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(config),
+    }),
+  );
 }
 
 export async function deleteMcpServer(slug: string, id: string): Promise<void> {
@@ -341,7 +359,9 @@ export async function deleteProvider(id: string): Promise<void> {
 }
 
 export async function fetchProviderModels(id: string): Promise<string[]> {
-  const res = await fetch(`/api/providers/${id}/fetch-models`, { method: "POST" });
+  const res = await fetch(`/api/providers/${id}/fetch-models`, {
+    method: "POST",
+  });
   const data = await res.json();
   return (data as any).models;
 }

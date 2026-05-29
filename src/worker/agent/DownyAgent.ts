@@ -232,7 +232,7 @@ export class DownyAgent extends Think {
       callTool: (serverId, name, args) =>
         this.callMcpToolWithRecovery(serverId, name, args),
     });
-    
+
     const model = await getModelFor(this.env, aiProvider);
 
     return {
@@ -262,7 +262,7 @@ export class DownyAgent extends Think {
       msSinceTurnStart: Date.now() - this.#turnStartedAt,
       usage: ctx.usage,
     });
-    
+
     // Store usage metrics in DO storage for the health dashboard
     void this.#recordUsage(ctx.usage);
 
@@ -276,7 +276,10 @@ export class DownyAgent extends Think {
 
   async #recordUsage(usage: { inputTokens: number; outputTokens: number }) {
     const key = "metrics:usage";
-    const current = await this.ctx.storage.get<{ input: number; output: number }>(key) || { input: 0, output: 0 };
+    const current = (await this.ctx.storage.get<{
+      input: number;
+      output: number;
+    }>(key)) || { input: 0, output: 0 };
     await this.ctx.storage.put(key, {
       input: current.input + usage.inputTokens,
       output: current.output + usage.outputTokens,
@@ -316,15 +319,20 @@ export class DownyAgent extends Think {
         ? now - this.#lastStepFinishAt
         : null,
     });
-    
+
     if (result.status === "completed" && result.message) {
-      const telegramMetadata = (this.messages[this.messages.length - 2]?.metadata as any)?.telegram 
-        ? this.messages[this.messages.length - 2].metadata 
+      const lastUserMetadata = this.messages[this.messages.length - 2]
+        ?.metadata as any;
+      const telegramMetadata = lastUserMetadata?.telegram
+        ? lastUserMetadata
         : null;
-        
+
       if (telegramMetadata) {
         const chatId = telegramMetadata.chatId;
-        const text = result.message.parts.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n');
+        const text = result.message.parts
+          .filter((p: any) => p.type === "text")
+          .map((p: any) => p.text)
+          .join("\n");
         void this.#sendTelegramReply(chatId, text);
       }
     }
@@ -333,10 +341,10 @@ export class DownyAgent extends Think {
   async #sendTelegramReply(chatId: string, text: string) {
     const token = (this.env as any).TELEGRAM_BOT_TOKEN;
     if (!token) return;
-    
+
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
         text: text,
@@ -824,18 +832,21 @@ export class DownyAgent extends Think {
 
   // Health / Status Metrics
   async getStatus() {
-    const usage = await this.ctx.storage.get<{ input: number; output: number }>("metrics:usage") || { input: 0, output: 0 };
+    const usage = (await this.ctx.storage.get<{
+      input: number;
+      output: number;
+    }>("metrics:usage")) || { input: 0, output: 0 };
     const tasks = await this.listBackgroundTasks();
     const files = await this.listWorkspaceFiles();
-    
+
     return {
       name: this.name,
       slug: this.slug,
       sessionId: this.sessionId,
       usage,
-      activeTasks: tasks.filter(t => t.status === "running").length,
-      completedTasks: tasks.filter(t => t.status === "done").length,
-      failedTasks: tasks.filter(t => t.status === "error").length,
+      activeTasks: tasks.filter((t) => t.status === "running").length,
+      completedTasks: tasks.filter((t) => t.status === "done").length,
+      failedTasks: tasks.filter((t) => t.status === "error").length,
       fileCount: files.length,
       storageUsage: files.reduce((acc, f) => acc + (f.size || 0), 0),
     };

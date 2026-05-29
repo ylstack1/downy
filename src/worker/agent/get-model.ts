@@ -14,7 +14,11 @@ import {
   isBuiltinAiProvider,
   type AiProvider,
 } from "../../lib/ai-providers";
-import { readPreferences, getAiProvider, type AiProviderRecord } from "../db/profile";
+import {
+  readPreferences,
+  getAiProvider,
+  type AiProviderRecord,
+} from "../db/profile";
 
 export { DEFAULT_AI_PROVIDER };
 
@@ -80,56 +84,62 @@ const friendlyLocalPiFetch: typeof fetch = async (input, init) => {
   }
 };
 
-const BUILTIN_REGISTRY: Record<string, (env: Cloudflare.Env) => LanguageModel> = {
-  kimi: (env) => createWorkersAI({ binding: env.AI }).chat(env.MODEL_ID),
+const BUILTIN_REGISTRY: Record<string, (env: Cloudflare.Env) => LanguageModel> =
+  {
+    kimi: (env) => createWorkersAI({ binding: env.AI }).chat(env.MODEL_ID),
 
-  "pi-local": (env) => {
-    if (piRelayVpc(env)) return BUILTIN_REGISTRY["pi-prod"](env);
-    return piModel("http://127.0.0.1:8788/v1", friendlyLocalPiFetch);
-  },
+    "pi-local": (env) => {
+      if (piRelayVpc(env)) return BUILTIN_REGISTRY["pi-prod"](env);
+      return piModel("http://127.0.0.1:8788/v1", friendlyLocalPiFetch);
+    },
 
-  "pi-prod": (env) => {
-    const vpc = piRelayVpc(env);
-    if (!vpc) {
-      throw new Error(
-        "VPC_UNREACHABLE: pi-prod selected but PI_RELAY_VPC binding is not configured (set PI_RELAY_VPC_SERVICE_ID in .env)",
-      );
-    }
-    const baseFetch = vpc.fetch.bind(vpc);
-    const timedFetch: typeof fetch = async (input, init) => {
-      const ctrl = new AbortController();
-      const timeout = setTimeout(() => {
-        ctrl.abort();
-      }, 20_000);
-      try {
-        return await baseFetch(input, { ...init, signal: ctrl.signal });
-      } catch (err) {
-        if (ctrl.signal.aborted) {
-          throw new Error(
-            "VPC_UNREACHABLE: timed out reaching pi-relay.internal through the Workers VPC binding",
-            { cause: err },
-          );
-        }
-        const detail = err instanceof Error ? err.message : String(err);
-        throw new Error(`VPC_UNREACHABLE: ${detail}`, { cause: err });
-      } finally {
-        clearTimeout(timeout);
+    "pi-prod": (env) => {
+      const vpc = piRelayVpc(env);
+      if (!vpc) {
+        throw new Error(
+          "VPC_UNREACHABLE: pi-prod selected but PI_RELAY_VPC binding is not configured (set PI_RELAY_VPC_SERVICE_ID in .env)",
+        );
       }
-    };
-    return piModel("http://pi-relay.internal/v1", timedFetch);
-  },
+      const baseFetch = vpc.fetch.bind(vpc);
+      const timedFetch: typeof fetch = async (input, init) => {
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => {
+          ctrl.abort();
+        }, 20_000);
+        try {
+          return await baseFetch(input, { ...init, signal: ctrl.signal });
+        } catch (err) {
+          if (ctrl.signal.aborted) {
+            throw new Error(
+              "VPC_UNREACHABLE: timed out reaching pi-relay.internal through the Workers VPC binding",
+              { cause: err },
+            );
+          }
+          const detail = err instanceof Error ? err.message : String(err);
+          throw new Error(`VPC_UNREACHABLE: ${detail}`, { cause: err });
+        } finally {
+          clearTimeout(timeout);
+        }
+      };
+      return piModel("http://pi-relay.internal/v1", timedFetch);
+    },
 
-  openrouter: (env) => {
-    const apiKey = env.OPENROUTER_API_KEY;
-    const modelId = env.OPENROUTER_MODEL_ID;
-    if (!apiKey || !modelId) {
-      throw new Error("openrouter selected but OPENROUTER_API_KEY or OPENROUTER_MODEL_ID is not set");
-    }
-    return createOpenRouter({ apiKey })(modelId);
-  },
-};
+    openrouter: (env) => {
+      const apiKey = env.OPENROUTER_API_KEY;
+      const modelId = env.OPENROUTER_MODEL_ID;
+      if (!apiKey || !modelId) {
+        throw new Error(
+          "openrouter selected but OPENROUTER_API_KEY or OPENROUTER_MODEL_ID is not set",
+        );
+      }
+      return createOpenRouter({ apiKey })(modelId);
+    },
+  };
 
-export async function getModelFor(env: Cloudflare.Env, providerId: AiProvider): Promise<LanguageModel> {
+export async function getModelFor(
+  env: Cloudflare.Env,
+  providerId: AiProvider,
+): Promise<LanguageModel> {
   if (isBuiltinAiProvider(providerId)) {
     return BUILTIN_REGISTRY[providerId](env);
   }
@@ -144,27 +154,36 @@ export async function getModelFor(env: Cloudflare.Env, providerId: AiProvider): 
 }
 
 function createModelFromConfig(config: AiProviderRecord): LanguageModel {
-  const { type, apiKey, endpoint, name } = config;
-  
+  const { type, apiKey, endpoint } = config;
+
   // Use the name as the model ID for now, or we might need another field in D1
   // For now, let's assume 'name' in D1 might contain the model ID if it's not a generic provider
   // Actually, better to have a separate model_id field.
   // Given the current schema, let's assume 'name' is the display name and 'id' is the provider ID.
   // We might need to store the default model for each provider too.
-  
+
   // Let's assume for now that if it's Anthropic, we use 'claude-3-5-sonnet-latest'
   // If it's Google, we use 'gemini-1.5-pro'
-  
+
   switch (type) {
     case "anthropic":
-      return createAnthropic({ apiKey: apiKey ?? "" })("claude-3-5-sonnet-latest");
+      return createAnthropic({ apiKey: apiKey ?? "" })(
+        "claude-3-5-sonnet-latest",
+      );
     case "google":
-      return createGoogleGenerativeAI({ apiKey: apiKey ?? "" })("gemini-1.5-pro");
+      return createGoogleGenerativeAI({ apiKey: apiKey ?? "" })(
+        "gemini-1.5-pro",
+      );
     case "openrouter":
-      return createOpenRouter({ apiKey: apiKey ?? "" })("meta-llama/llama-3.1-405b-instruct");
+      return createOpenRouter({ apiKey: apiKey ?? "" })(
+        "meta-llama/llama-3.1-405b-instruct",
+      );
     case "openai":
     case "custom":
-      return createOpenAI({ apiKey: apiKey ?? "", baseURL: endpoint ?? undefined })("gpt-4o");
+      return createOpenAI({
+        apiKey: apiKey ?? "",
+        baseURL: endpoint ?? undefined,
+      })("gpt-4o");
     default:
       throw new Error(`Unsupported provider type: ${type}`);
   }

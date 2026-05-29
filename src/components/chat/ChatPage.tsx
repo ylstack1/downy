@@ -10,6 +10,7 @@ import {
   startBootstrap,
 } from "../../lib/api-client";
 import { useCurrentAgentSlug } from "../../lib/agents";
+import { useAgentSkills } from "../../lib/queries";
 import { alertDialog, confirmDialog } from "../ui/dialog";
 import AgentPanel from "./AgentPanel";
 import InputBox from "./InputBox";
@@ -122,8 +123,13 @@ function readBackgroundTaskSource(
   return { taskId: m.taskId, taskKind: m.taskKind, status };
 }
 
-export default function ChatPage({ sessionId = "default" }: { sessionId?: string }) {
+export default function ChatPage({
+  sessionId = "default",
+}: {
+  sessionId?: string;
+}) {
   const slug = useCurrentAgentSlug();
+  const { data: skills } = useAgentSkills(slug);
   const agent = useAgent({
     agent: "DownyAgent",
     name: `${slug}:${sessionId}`,
@@ -461,6 +467,7 @@ export default function ChatPage({ sessionId = "default" }: { sessionId?: string
             onCancelDraft={() => {
               setEditDraft(null);
             }}
+            skills={skills}
           />
         </div>
       </main>
