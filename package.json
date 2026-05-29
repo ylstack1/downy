@@ -28,6 +28,8 @@
     "ci:check": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.81",
+    "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/openai": "^3.0.53",
     "@ai-sdk/react": "^3.0.0",
     "@cloudflare/ai-chat": "^0.4.4",

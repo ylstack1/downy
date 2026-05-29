@@ -7,6 +7,7 @@ import {
   IdCard,
   ListTodo,
   Lock,
+  MessageSquare,
   Plug,
   Plus,
   Settings,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { encodePath } from "../../lib/api-client";
+import { createSession, encodePath } from "../../lib/api-client";
 import {
   useAgents,
   useCreateAgent,
@@ -27,6 +28,7 @@ import {
   useBackgroundTasks,
   useMcpServers,
   useMcpServersLiveSync,
+  useSessions,
   useWorkspaceFiles,
 } from "../../lib/queries";
 import { queryKeys } from "../../lib/query-keys";

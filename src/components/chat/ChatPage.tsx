@@ -122,11 +122,11 @@ function readBackgroundTaskSource(
   return { taskId: m.taskId, taskKind: m.taskKind, status };
 }
 
-export default function ChatPage() {
+export default function ChatPage({ sessionId = "default" }: { sessionId?: string }) {
   const slug = useCurrentAgentSlug();
   const agent = useAgent({
     agent: "DownyAgent",
-    name: slug,
+    name: `${slug}:${sessionId}`,
     protocol: window.location.protocol === "https:" ? "wss" : "ws",
   });
 

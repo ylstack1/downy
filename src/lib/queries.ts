@@ -15,6 +15,14 @@ import {
   writeCoreFile,
   writeUserFile,
   writeWorkspaceFile,
+  listSessions,
+  createSession,
+  deleteSession,
+  listProviders,
+  createProvider,
+  updateProvider,
+  deleteProvider,
+  getSystemStatus,
 } from "./api-client";
 import { queryKeys } from "./query-keys";
 
@@ -30,9 +38,6 @@ type AgentMessageSocket = {
  * Listen for the agents-SDK-emitted `cf_agent_mcp_servers` frame on the given
  * socket and invalidate the per-slug mcpServers query so consumers refetch our
  * serialized shape (which includes tool names, etc — richer than the SDK frame).
- *
- * Connect/disconnect inside the agent triggers this frame automatically; we
- * just have to translate it into a query-cache invalidation.
  */
 export function useMcpServersLiveSync(
   agent: AgentMessageSocket,
@@ -66,10 +71,7 @@ export function useMcpServersLiveSync(
 }
 
 /**
- * Read hooks. Each is a thin wrapper over `useQuery` with the right key
- * factory and the matching api-client function as `queryFn`. Components
- * that consume these don't need to know about react-query at all — they
- * see `{ data, isLoading, error }` and the cache is shared automatically.
+ * Read hooks.
  */
 
 export function useAgentSkills(slug: string) {
@@ -138,10 +140,29 @@ export function useUserFile() {
   });
 }
 
+export function useSessions(slug: string) {
+  return useQuery({
+    queryKey: queryKeys.sessions(slug),
+    queryFn: () => listSessions(slug),
+  });
+}
+
+export function useProviders() {
+  return useQuery({
+    queryKey: queryKeys.providers(),
+    queryFn: () => listProviders(),
+  });
+}
+
+export function useSystemStatus() {
+  return useQuery({
+    queryKey: queryKeys.systemStatus(),
+    queryFn: () => getSystemStatus(),
+  });
+}
+
 /**
- * Mutation hooks. Each invalidates the queries it could plausibly affect.
- * `onSuccess` here keeps the invalidation right next to the write — far
- * easier to keep in sync than scattering invalidate calls at every callsite.
+ * Mutation hooks.
  */
 
 export function useWriteWorkspaceFile() {
@@ -150,14 +171,8 @@ export function useWriteWorkspaceFile() {
     mutationFn: (vars: { slug: string; path: string; content: string }) =>
       writeWorkspaceFile(vars.slug, vars.path, vars.content),
     onSuccess: (_, vars) => {
-      void qc.invalidateQueries({
-        queryKey: queryKeys.workspaceFiles(vars.slug),
-      });
-      void qc.invalidateQueries({
-        queryKey: queryKeys.workspaceFile(vars.slug, vars.path),
-      });
-      // A skill SKILL.md edit goes through this same write path; the
-      // sidebar / index page reads from the skills query, so refresh it too.
+      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFiles(vars.slug) });
+      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFile(vars.slug, vars.path) });
       if (vars.path.startsWith("skills/")) {
         void qc.invalidateQueries({ queryKey: queryKeys.skills(vars.slug) });
       }
@@ -171,12 +186,8 @@ export function useDeleteWorkspaceFile() {
     mutationFn: (vars: { slug: string; path: string }) =>
       deleteWorkspaceFile(vars.slug, vars.path),
     onSuccess: (_, vars) => {
-      void qc.invalidateQueries({
-        queryKey: queryKeys.workspaceFiles(vars.slug),
-      });
-      void qc.invalidateQueries({
-        queryKey: queryKeys.workspaceFile(vars.slug, vars.path),
-      });
+      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFiles(vars.slug) });
+      void qc.invalidateQueries({ queryKey: queryKeys.workspaceFile(vars.slug, vars.path) });
       if (vars.path.startsWith("skills/")) {
         void qc.invalidateQueries({ queryKey: queryKeys.skills(vars.slug) });
       }
@@ -191,9 +202,7 @@ export function useWriteCoreFile() {
       writeCoreFile(vars.slug, vars.path, vars.content),
     onSuccess: (_, vars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.coreFiles(vars.slug) });
-      void qc.invalidateQueries({
-        queryKey: queryKeys.coreFile(vars.slug, vars.path),
-      });
+      void qc.invalidateQueries({ queryKey: queryKeys.coreFile(vars.slug, vars.path) });
     },
   });
 }
@@ -215,6 +224,59 @@ export function useWriteUserFile() {
     mutationFn: (content: string) => writeUserFile(content),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.userFile() });
+    },
+  });
+}
+
+export function useCreateSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { slug: string; title: string }) =>
+      createSession(vars.slug, vars.title),
+    onSuccess: (_, vars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions(vars.slug) });
+    },
+  });
+}
+
+export function useDeleteSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { slug: string; id: string }) =>
+      deleteSession(vars.id),
+    onSuccess: (_, vars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions(vars.slug) });
+    },
+  });
+}
+
+export function useCreateProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: any) => createProvider(provider),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.providers() });
+    },
+  });
+}
+
+export function useUpdateProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; provider: any }) =>
+      updateProvider(vars.id, vars.provider),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.providers() });
+    },
+  });
+}
+
+export function useDeleteProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteProvider(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.providers() });
     },
   });
 }
