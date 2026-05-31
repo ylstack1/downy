@@ -7,6 +7,7 @@ import {
   IdCard,
   ListTodo,
   Lock,
+  MessageSquare,
   Plug,
   Plus,
   Settings,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { encodePath } from "../../lib/api-client";
+import { createSession, encodePath } from "../../lib/api-client";
 import {
   useAgents,
   useCreateAgent,
@@ -25,8 +26,10 @@ import { withBack } from "../../lib/back-nav";
 import {
   useAgentSkills,
   useBackgroundTasks,
+  useCreateSession,
   useMcpServers,
   useMcpServersLiveSync,
+  useSessions,
   useWorkspaceFiles,
 } from "../../lib/queries";
 import { queryKeys } from "../../lib/query-keys";
@@ -338,6 +341,72 @@ function SectionHeader({
     default:
       return content;
   }
+}
+
+export function SessionSwitcher({ onNavigate }: { onNavigate?: () => void }) {
+  const slug = useCurrentAgentSlug();
+  const { data: sessions } = useSessions(slug);
+  const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState("");
+  const createMut = useCreateSession();
+
+  const handleCreate = async () => {
+    if (!title.trim()) return;
+    const session = await createMut.mutateAsync({ slug, title: title.trim() });
+    setCreating(false);
+    setTitle("");
+    await navigate({
+      to: "/agent/$slug/chat/$sessionId" as any,
+      params: { slug, sessionId: session.id } as any,
+    });
+    onNavigate?.();
+  };
+
+  return (
+    <section className="flex flex-col gap-1">
+      <SectionHeader icon={MessageSquare} label="Sessions" />
+      <div className="flex flex-col gap-1">
+        {sessions?.map((s) => (
+          <Link
+            key={s.id}
+            to={"/agent/$slug/chat/$sessionId" as any}
+            params={{ slug, sessionId: s.id } as any}
+            onClick={onNavigate}
+            activeProps={{ className: "bg-base-200 text-base-content" }}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-base-content/70 hover:bg-base-200 hover:text-base-content"
+          >
+            <MessageSquare size={12} className="shrink-0 opacity-50" />
+            <span className="truncate">{s.title}</span>
+          </Link>
+        ))}
+
+        {creating ? (
+          <div className="flex items-center gap-1 px-2 py-1">
+            <input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreate();
+                if (e.key === "Escape") setCreating(false);
+              }}
+              placeholder="Session title..."
+              className="min-w-0 flex-1 bg-transparent text-xs outline-none"
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => setCreating(true)}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-primary hover:bg-primary/5"
+          >
+            <Plus size={12} />
+            <span>New Session</span>
+          </button>
+        )}
+      </div>
+    </section>
+  );
 }
 
 export function SettingsSection({ onNavigate }: { onNavigate?: () => void }) {
