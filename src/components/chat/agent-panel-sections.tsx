@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { createSession, encodePath } from "../../lib/api-client";
+import { encodePath } from "../../lib/api-client";
 import {
   useAgents,
   useCreateAgent,
@@ -30,6 +30,7 @@ import {
   useMcpServers,
   useMcpServersLiveSync,
   useSessions,
+  useSystemStatus,
   useWorkspaceFiles,
 } from "../../lib/queries";
 import { queryKeys } from "../../lib/query-keys";
@@ -404,6 +405,33 @@ export function SessionSwitcher({ onNavigate }: { onNavigate?: () => void }) {
             <span>New Session</span>
           </button>
         )}
+      </div>
+    </section>
+  );
+}
+
+export function ChannelsSection({ onNavigate }: { onNavigate?: () => void }) {
+  const { data: status } = useSystemStatus();
+
+  return (
+    <section className="flex flex-col gap-1">
+      <SectionHeader icon={MessageSquare} label="Channels" />
+      <div className="flex flex-col gap-1">
+        <Link
+          to="/settings"
+          onClick={onNavigate}
+          className="flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-base-content/70 hover:bg-base-200 hover:text-base-content"
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className={`size-2 shrink-0 rounded-full ${status?.telegramConfigured ? "bg-success" : "bg-base-content/20"}`}
+            />
+            <span>Telegram Bot</span>
+          </div>
+          {status?.telegramConfigured && (
+            <span className="text-[10px] opacity-50">Active</span>
+          )}
+        </Link>
       </div>
     </section>
   );

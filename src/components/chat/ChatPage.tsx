@@ -10,7 +10,7 @@ import {
   startBootstrap,
 } from "../../lib/api-client";
 import { useCurrentAgentSlug } from "../../lib/agents";
-import { useAgentSkills } from "../../lib/queries";
+import { useAgentSkills, useMcpServers } from "../../lib/queries";
 import { alertDialog, confirmDialog } from "../ui/dialog";
 import AgentPanel from "./AgentPanel";
 import InputBox from "./InputBox";
@@ -130,11 +130,30 @@ export default function ChatPage({
 }) {
   const slug = useCurrentAgentSlug();
   const { data: skills } = useAgentSkills(slug);
+  const { data: mcpServers } = useMcpServers(slug);
   const agent = useAgent({
     agent: "DownyAgent",
     name: `${slug}:${sessionId}`,
     protocol: window.location.protocol === "https:" ? "wss" : "ws",
   });
+
+  const mcpTools = useMemo(() => {
+    if (!mcpServers) return [];
+    return mcpServers.flatMap((s) =>
+      s.toolNames.map((name) => ({
+        name,
+        description: `Tool from ${s.name}`,
+        isMcp: true,
+      })),
+    );
+  }, [mcpServers]);
+
+  const allMentions = useMemo(() => {
+    return [
+      ...(skills || []).map((s) => ({ ...s, isSkill: true })),
+      ...mcpTools,
+    ] as any[];
+  }, [skills, mcpTools]);
 
   const { messages, sendMessage, stop, status, isStreaming, error } =
     useAgentChat({
@@ -467,7 +486,7 @@ export default function ChatPage({
             onCancelDraft={() => {
               setEditDraft(null);
             }}
-            skills={skills}
+            skills={allMentions}
           />
         </div>
       </main>

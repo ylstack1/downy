@@ -1,4 +1,5 @@
-import { readPreferences, listAiProviders } from "../db/profile";
+import { readPreferences, listAiProviders, listAgents } from "../db/profile";
+import { getAgentStub } from "../lib/get-agent";
 
 const JSON_HEADERS = { "content-type": "application/json" };
 
@@ -21,16 +22,30 @@ export async function handleSystemStatusRequest(
     return json({ error: "Method not allowed" }, 405);
   }
 
-  const [prefs, providers] = await Promise.all([
+  const [prefs, providers, agents] = await Promise.all([
     readPreferences(env.DB),
     listAiProviders(env.DB),
+    listAgents(env.DB),
   ]);
+
+  const agentStats = await Promise.all(
+    agents.map(async (a) => {
+      try {
+        const stub = await getAgentStub(env, `${a.slug}:default`);
+        return await stub.getStatus();
+      } catch (err) {
+        return { slug: a.slug, error: String(err) };
+      }
+    }),
+  );
 
   return json({
     exaConfigured: !!env.EXA_API_KEY,
-    telegramConfigured: !!(env as any).TELEGRAM_BOT_TOKEN,
-    vpcTunnelConfigured: !!(env as any).VPC_TUNNEL_URL,
+    telegramConfigured:
+      !!(prefs as any).telegram_bot_token || !!(env as any).TELEGRAM_BOT_TOKEN,
+    vpcTunnelConfigured: !!(env as any).PI_RELAY_VPC,
     aiProvidersCount: providers.length,
     telegramWhitelist: (prefs as any).telegram_whitelist || "",
+    agentStats,
   });
 }

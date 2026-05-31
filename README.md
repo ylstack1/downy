@@ -2,6 +2,8 @@
 
 Build a team of agents and work with them from any device.
 
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/downy)
+
 - Best UX for working with multiple agents.
 - Each agent has its own personality, skills, tools, and workspace.
 - OpenAI Sub compatible for frontier models at a flat rate. Or, use any model on OpenRouter or Workers AI.
