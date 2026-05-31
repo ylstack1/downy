@@ -48,7 +48,7 @@ The proxy itself runs without auth because the network boundary _is_ the securit
    pnpm deploy
    ```
 
-   `alchemy.run.ts` reads that env var and adds the `PI_RELAY_VPC` binding via `VpcServiceRef` only when it's set, so you can leave the line commented out on machines that don't have the proxy.
+   `wrangler.jsonc` reads that env var and the Worker code uses `env.PI_RELAY_VPC` only when the binding exists at deploy time, so you can leave the line commented out on machines that don't have the proxy.
 
 5. **Switch Downy to the proxy.** Open the deployed app at `/settings` → **Preferences** → **Model** and pick **Pi proxy — production VPC**. New turns route through your subscription.
 

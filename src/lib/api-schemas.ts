@@ -167,5 +167,6 @@ export const SystemStatusResponseSchema = z.object({
   vpcTunnelConfigured: z.boolean(),
   aiProvidersCount: z.number(),
   telegramWhitelist: z.string(),
+  agentStats: z.array(z.any()).optional(),
 });
 export type SystemStatus = z.infer<typeof SystemStatusResponseSchema>;

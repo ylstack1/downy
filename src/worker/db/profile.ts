@@ -439,7 +439,7 @@ export async function readConfigWithEnvFallback(
   const fromPref = prefs[prefKey];
   if (fromPref) return fromPref;
 
-  const fromEnv = (env as Record<string, string>)[envKey];
+  const fromEnv = (env as unknown as Record<string, string>)[envKey];
   if (fromEnv) return fromEnv;
 
   return defaultValue;

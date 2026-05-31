@@ -151,4 +151,4 @@ The Worker expects these Cloudflare resources:
 - MCP header-auth credentials are persisted in agent DO storage. That is acceptable for a self-hosted personal prototype but should be treated as sensitive data at rest.
 - `ignore-client-cancels` patches Think internals. Keep this isolated and revisit when upstream cancellation behavior stabilizes.
 - Several UI screens duplicate shell/header/list/status-dot patterns. Consolidating these would make the interface feel more intentional.
-- The optional `PI_RELAY_VPC` binding in `alchemy.run.ts` is gated on `PI_RELAY_VPC_SERVICE_ID` being set in `.env`; that gate should be kept consistent with what `get-model.ts` expects when the user picks the `pi-prod` provider.
+- The optional `PI_RELAY_VPC` binding in `wrangler.jsonc` is gated on `PI_RELAY_VPC_SERVICE_ID` being set in `.env`; that gate should be kept consistent with what `get-model.ts` expects when the user picks the `pi-prod` provider.
