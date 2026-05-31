@@ -20,20 +20,18 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 flex min-h-14 w-full items-center gap-2 bg-base-100/80 px-2 backdrop-blur-lg md:hidden">
       <div className="flex flex-1 items-center gap-2">
+        <button
+          type="button"
+          aria-label="Open panel"
+          onClick={() => {
+            setMobilePanelOpen(true);
+          }}
+          className="flex size-9 items-center justify-center rounded-full bg-base-200 text-base-content/80 active:bg-base-300"
+        >
+          <Menu size={18} />
+        </button>
         {onChat ? (
-          <>
-            <button
-              type="button"
-              aria-label="Open panel"
-              onClick={() => {
-                setMobilePanelOpen(true);
-              }}
-              className="flex size-9 items-center justify-center rounded-full bg-base-200 text-base-content/80 active:bg-base-300"
-            >
-              <Menu size={18} />
-            </button>
-            <AgentPill />
-          </>
+          <AgentPill />
         ) : (
           <Link
             to="/agent/$slug"
