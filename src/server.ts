@@ -155,6 +155,8 @@ export default {
       url.pathname.startsWith("/api/providers/") ||
       url.pathname.startsWith("/api/sessions/") ||
       url.pathname === "/api/telegram/webhook" ||
+      url.pathname === "/api/telegram/setup" ||
+      url.pathname === "/api/telegram/test" ||
       url.pathname.match(/^\/api\/agents\/[^/]+\/sessions$/)
     ) {
       return handleEnhancedRequest(request, env);
