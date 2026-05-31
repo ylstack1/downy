@@ -365,3 +365,14 @@ export async function fetchProviderModels(id: string): Promise<string[]> {
   const data = await res.json();
   return (data as any).models;
 }
+
+// Telegram Management
+export async function setupTelegramWebhook(): Promise<any> {
+  const res = await fetch("/api/telegram/setup", { method: "POST" });
+  return res.json();
+}
+
+export async function testTelegramBot(): Promise<any> {
+  const res = await fetch("/api/telegram/test", { method: "POST" });
+  return res.json();
+}

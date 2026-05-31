@@ -3,6 +3,7 @@ import {
   isAiProvider,
   type AiProvider,
 } from "../lib/ai-providers";
+import { useState } from "react";
 import {
   useAiProvider,
   useShowThinking,
@@ -10,6 +11,8 @@ import {
   useTelegramWhitelist,
 } from "../lib/preferences";
 import { useProviders } from "../lib/queries";
+import { setupTelegramWebhook, testTelegramBot } from "../lib/api-client";
+import { alertDialog } from "./ui/dialog";
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   kimi: "Kimi K2.6 (Workers AI)",
@@ -25,6 +28,66 @@ export default function PreferencesCard() {
   const [telegramWhitelist, setTelegramWhitelist] = useTelegramWhitelist();
   const { data: providersData } = useProviders();
   const managedProviders = (providersData as any)?.providers || [];
+
+  const [busy, setBusy] = useState(false);
+
+  async function handleSetupWebhook() {
+    if (!telegramToken) {
+      void alertDialog({
+        title: "Token required",
+        message: "Please enter your Telegram Bot API Token first.",
+      });
+      return;
+    }
+    setBusy(true);
+    try {
+      const data = await setupTelegramWebhook();
+      if (data.ok) {
+        void alertDialog({
+          title: "Success",
+          message: "Telegram webhook has been set up successfully.",
+        });
+      } else {
+        throw new Error(data.description || "Failed to set up webhook");
+      }
+    } catch (err) {
+      void alertDialog({
+        title: "Setup failed",
+        message: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleTestBot() {
+    if (!telegramToken) {
+      void alertDialog({
+        title: "Token required",
+        message: "Please enter your Telegram Bot API Token first.",
+      });
+      return;
+    }
+    setBusy(true);
+    try {
+      const data = await testTelegramBot();
+      if (data.ok) {
+        void alertDialog({
+          title: "Bot is active",
+          message: `Connected as @${data.result.username} (${data.result.first_name})`,
+        });
+      } else {
+        throw new Error(data.description || "Failed to test bot");
+      }
+    } catch (err) {
+      void alertDialog({
+        title: "Test failed",
+        message: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -114,6 +177,25 @@ export default function PreferencesCard() {
               recommended).
             </span>
           </label>
+
+          <div className="flex items-center gap-2 pt-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleSetupWebhook}
+              className="btn btn-primary btn-sm flex-1"
+            >
+              {busy ? "Setting up..." : "Save & Set Webhook"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleTestBot}
+              className="btn btn-ghost btn-sm"
+            >
+              Test Bot
+            </button>
+          </div>
         </div>
       </section>
     </div>

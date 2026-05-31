@@ -139,7 +139,28 @@ export async function handleEnhancedRequest(
     }
   }
 
-  // Telegram Webhook
+  // Telegram Setup & Webhook
+  if (url.pathname === "/api/telegram/setup" && request.method === "POST") {
+    const token = await getTelegramToken(env.DB, env);
+    if (!token) return json({ error: "Telegram token not configured" }, 400);
+
+    const webhookUrl = `${new URL(request.url).origin}/api/telegram/webhook`;
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/setWebhook?url=${webhookUrl}`,
+    );
+    const data = await res.json();
+    return json(data);
+  }
+
+  if (url.pathname === "/api/telegram/test" && request.method === "POST") {
+    const token = await getTelegramToken(env.DB, env);
+    if (!token) return json({ error: "Telegram token not configured" }, 400);
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const data = await res.json();
+    return json(data);
+  }
+
   if (url.pathname === "/api/telegram/webhook" && request.method === "POST") {
     const update: any = await request.json();
     if (update.message) {
