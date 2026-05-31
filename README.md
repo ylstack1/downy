@@ -67,25 +67,18 @@ Set up env vars and deploy:
 - Set required secrets via `npx wrangler secret put`:
   ```bash
   npx wrangler secret put EXA_API_KEY
-  npx wrangler secret put TEAM_DOMAIN
-  npx wrangler secret put POLICY_AUD
   ```
 - Or set them through the Cloudflare Dashboard under your Worker's **Settings → Variables**.
-- Optional secrets (for additional model providers):
-  ```bash
-  npx wrangler secret put OPENROUTER_API_KEY
-  npx wrangler secret put OPENROUTER_MODEL_ID
-  ```
 
 ```
 pnpm deploy
 ```
 
-The Worker rejects every request until Cloudflare Access is in front of it — that's next.
+By default, the Worker is open to the public. To protect your instance, we recommend setting up Cloudflare Access (see below).
 
-## Authentication: Cloudflare Access
+## Optional Authentication: Cloudflare Access
 
-By putting Downy behind Cloudflare Access, it gates all traffic to the service unless you've authenticated. This authentication is managed by Cloudflare, not Downy. By default, Cloudflare Access adds the email tied to your Cloudflare Account to the allow list and authenticates by sending a One Time Password to your email.
+To protect your Downy instance from public access, you can put it behind Cloudflare Access. This gates all traffic until you've authenticated.
 
 Here is how you set it up:
 
@@ -100,7 +93,7 @@ Here is how you set it up:
 3. **Set those values as secrets:**
    - `npx wrangler secret put TEAM_DOMAIN` — paste `https://<team>.cloudflareaccess.com`
    - `npx wrangler secret put POLICY_AUD` — paste the `<aud-tag>`
-4. `pnpm deploy`, then open your Worker URL and log in.
+4. `pnpm deploy`, then open your Worker URL and log in. If these variables are not set, Downy will allow unauthenticated access.
 
 <details>
 <summary>Sign-in works but you still see "Authentication required"?</summary>

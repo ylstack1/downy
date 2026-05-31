@@ -83,7 +83,7 @@ export default {
         if (access.ok) {
           return Response.redirect(new URL("/", request.url).toString(), 302);
         }
-      } else if (!access.ok) {
+      } else if (!access.ok && access.reason !== "config_missing") {
         if (isApiOrSocketRequest(url, request)) {
           return Response.json(
             { error: "unauthenticated", reason: access.reason },
