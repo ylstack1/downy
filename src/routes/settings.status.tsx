@@ -14,8 +14,6 @@ import {
   ExternalLink,
   Activity,
   Box,
-  Brain,
-  HardDrive,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings/status")({

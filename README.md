@@ -64,8 +64,18 @@ npx wrangler login         # one-time browser OAuth to your Cloudflare account
 
 Set up env vars and deploy:
 
-- Set secrets via `npx wrangler secret put EXA_API_KEY` (and other required secrets).
-- Configure TEAM_DOMAIN and POLICY_AUD via `npx wrangler secret put` or the Cloudflare dashboard after Access is set up.
+- Set required secrets via `npx wrangler secret put`:
+  ```bash
+  npx wrangler secret put EXA_API_KEY
+  npx wrangler secret put TEAM_DOMAIN
+  npx wrangler secret put POLICY_AUD
+  ```
+- Or set them through the Cloudflare Dashboard under your Worker's **Settings → Variables**.
+- Optional secrets (for additional model providers):
+  ```bash
+  npx wrangler secret put OPENROUTER_API_KEY
+  npx wrangler secret put OPENROUTER_MODEL_ID
+  ```
 
 ```
 pnpm deploy

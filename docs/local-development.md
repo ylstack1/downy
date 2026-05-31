@@ -1,11 +1,10 @@
 # Local development
 
-The same `.env` file you use for `pnpm deploy` (see [`.env.example`](../.env.example)) drives `pnpm dev` — Alchemy's vite plugin reads `alchemy.run.ts` plus `.env` and injects every binding, var, and secret into the local Worker.
+The `.env` file drives `pnpm dev` — Wrangler reads bindings from `wrangler.jsonc` and injects every required binding, var, and secret into the local Worker.
 
 Minimum `.env` for local dev:
 
 ```
-ALCHEMY_PASSWORD=any-random-string
 EXA_API_KEY=your-exa-key-here
 ```
 
@@ -13,15 +12,13 @@ EXA_API_KEY=your-exa-key-here
 
 The `@cloudflare/vite-plugin` "remote bindings" feature is disabled in `vite.config.ts` (`remoteBindings: false`). It would otherwise try to proxy any binding that has no local emulation — most relevantly the `AI` binding for Workers AI — through the deployed worker at `downy.<account>.workers.dev`, which fails in a fresh shell because that worker is behind Cloudflare Access. Practical consequence: **Workers AI doesn't work in `pnpm dev`.** Use the pi-local path below, or pick a different model provider in Settings → Preferences. If you need Workers AI locally, either generate a Cloudflare Access service token and export `CLOUDFLARE_ACCESS_CLIENT_ID` / `CLOUDFLARE_ACCESS_CLIENT_SECRET`, or temporarily flip `remoteBindings` back to `true`.
 
-`ALCHEMY_PASSWORD` is only used to encrypt secrets at rest in `.alchemy/state/` — pick anything and stash it in your password manager.
-
 Then:
 
 ```bash
 pnpm dev
 ```
 
-The first run needs the Alchemy state populated. If you've never deployed, run `pnpm alchemy login` once and either `pnpm deploy` (full deploy) or `pnpm alchemy run` (read-only — just stages local config without pushing) before `pnpm dev`.
+Secrets (like `EXA_API_KEY`) are set via `npx wrangler secret put` for deployed workers. For local development, they can be defined in `.env` or set via `wrangler secret put` in local mode.
 
 ## Optional: ChatGPT subscription locally (pi-local)
 
