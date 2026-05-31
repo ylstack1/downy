@@ -150,40 +150,44 @@ export async function getModelFor(
     throw new Error(`Unknown AI provider: ${providerId}`);
   }
 
+  if (config.type === "workers-ai") {
+    return createWorkersAI({ binding: env.AI }).chat(
+      config.modelId || env.MODEL_ID,
+    );
+  }
+
   return createModelFromConfig(config);
 }
 
 function createModelFromConfig(config: AiProviderRecord): LanguageModel {
-  const { type, apiKey, endpoint } = config;
-
-  // Use the name as the model ID for now, or we might need another field in D1
-  // For now, let's assume 'name' in D1 might contain the model ID if it's not a generic provider
-  // Actually, better to have a separate model_id field.
-  // Given the current schema, let's assume 'name' is the display name and 'id' is the provider ID.
-  // We might need to store the default model for each provider too.
-
-  // Let's assume for now that if it's Anthropic, we use 'claude-3-5-sonnet-latest'
-  // If it's Google, we use 'gemini-1.5-pro'
+  const { type, apiKey, endpoint, modelId } = config;
 
   switch (type) {
     case "anthropic":
       return createAnthropic({ apiKey: apiKey ?? "" })(
-        "claude-3-5-sonnet-latest",
+        modelId || "claude-3-5-sonnet-latest",
       );
     case "google":
       return createGoogleGenerativeAI({ apiKey: apiKey ?? "" })(
-        "gemini-1.5-pro",
+        modelId || "gemini-1.5-pro",
       );
     case "openrouter":
       return createOpenRouter({ apiKey: apiKey ?? "" })(
-        "meta-llama/llama-3.1-405b-instruct",
+        modelId || "meta-llama/llama-3.1-405b-instruct",
       );
     case "openai":
     case "custom":
       return createOpenAI({
         apiKey: apiKey ?? "",
         baseURL: endpoint ?? undefined,
-      })("gpt-4o");
+      })(modelId || "gpt-4o");
+    case "workers-ai":
+      // Since it's not in the original switch, but it's in ManagedAiProvider type
+      // I'll add it here.
+      // Note: This needs access to env.AI if it's workers-ai, but this function
+      // only takes config.
+      // Actually, getModelFor has access to env.
+      throw new Error(`workers-ai provider should be handled in getModelFor`);
     default:
       throw new Error(`Unsupported provider type: ${type}`);
   }

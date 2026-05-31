@@ -19,12 +19,18 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }
 
+async function getTelegramToken(db: D1Database, env: Cloudflare.Env) {
+  const prefs = await readPreferences(db);
+  return (prefs as any).telegram_bot_token || (env as any).TELEGRAM_BOT_TOKEN;
+}
+
 async function sendTelegramMessage(
+  db: D1Database,
   env: Cloudflare.Env,
   chatId: string,
   text: string,
 ) {
-  const token = (env as any).TELEGRAM_BOT_TOKEN;
+  const token = await getTelegramToken(db, env);
   if (!token) return;
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
@@ -150,6 +156,7 @@ export async function handleEnhancedRequest(
 
       if (text === "/start") {
         await sendTelegramMessage(
+          env.DB,
           env,
           chatId,
           "Welcome! Please link this chat to an agent session in the Web UI, or use /link <agent-slug>.",
@@ -166,7 +173,12 @@ export async function handleEnhancedRequest(
             title: `Telegram Chat (${chatId})`,
           });
           await setTelegramChat(env.DB, chatId, slug, session.id);
-          await sendTelegramMessage(env, chatId, `Linked to agent ${slug}.`);
+          await sendTelegramMessage(
+            env.DB,
+            env,
+            chatId,
+            `Linked to agent ${slug}.`,
+          );
         }
         return json({ ok: true });
       }
@@ -183,7 +195,7 @@ export async function handleEnhancedRequest(
           const helpText =
             "Available skills:\n" +
             skills.map((s) => `/${s.name} - ${s.description}`).join("\n");
-          await sendTelegramMessage(env, chatId, helpText);
+          await sendTelegramMessage(env.DB, env, chatId, helpText);
         } else if (text.startsWith("/")) {
           // Could implement custom commands based on skills
           await stub.saveMessages([
@@ -206,6 +218,7 @@ export async function handleEnhancedRequest(
         }
       } else {
         await sendTelegramMessage(
+          env.DB,
           env,
           chatId,
           "This chat is not linked to any agent. Use /link <agent-slug> to link.",

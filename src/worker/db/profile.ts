@@ -189,6 +189,8 @@ const PREF_KEYS = [
   "color_scheme",
   "show_thinking",
   "ai_provider",
+  "telegram_bot_token",
+  "telegram_whitelist",
 ] as const;
 type PrefKey = (typeof PREF_KEYS)[number];
 
@@ -202,6 +204,7 @@ export type AiProviderRecord = {
   type: string;
   apiKey: string | null;
   endpoint: string | null;
+  modelId: string | null;
   isDefault: boolean;
   createdAt: number;
 };
@@ -212,6 +215,7 @@ type AiProviderRow = {
   type: string;
   api_key: string | null;
   endpoint: string | null;
+  model_id: string | null;
   is_default: number;
   created_at: number;
 };
@@ -223,6 +227,7 @@ function rowToAiProvider(row: AiProviderRow): AiProviderRecord {
     type: row.type,
     apiKey: row.api_key,
     endpoint: row.endpoint,
+    modelId: row.model_id,
     isDefault: row.is_default !== 0,
     createdAt: row.created_at,
   };
@@ -255,7 +260,7 @@ export async function createAiProvider(
   const now = Date.now();
   await db
     .prepare(
-      "INSERT INTO ai_providers (id, name, type, api_key, endpoint, is_default, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO ai_providers (id, name, type, api_key, endpoint, model_id, is_default, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(
       input.id,
@@ -263,6 +268,7 @@ export async function createAiProvider(
       input.type,
       input.apiKey,
       input.endpoint,
+      input.modelId,
       input.isDefault ? 1 : 0,
       now,
     )
@@ -292,6 +298,10 @@ export async function updateAiProvider(
   if (input.endpoint !== undefined) {
     sets.push("endpoint = ?");
     binds.push(input.endpoint);
+  }
+  if (input.modelId !== undefined) {
+    sets.push("model_id = ?");
+    binds.push(input.modelId);
   }
   if (input.isDefault !== undefined) {
     sets.push("is_default = ?");

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSystemStatus } from "../lib/queries";
 import PageShell from "../components/ui/PageShell";
 import BackLink from "../components/ui/BackLink";
@@ -12,6 +12,10 @@ import {
   MessageSquare,
   Database,
   ExternalLink,
+  Activity,
+  Box,
+  Brain,
+  HardDrive,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings/status")({
@@ -106,6 +110,77 @@ function SystemStatusPage() {
 
         <section className="space-y-4 md:col-span-2">
           <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Activity className="w-5 h-5" /> Agent Health & Usage
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(status.agentStats || []).map((agent: any) => (
+              <div
+                key={agent.slug}
+                className="p-4 bg-base-200 rounded-lg border border-base-300"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-bold text-lg">agent/{agent.slug}</div>
+                  <Link
+                    to="/agent/$slug"
+                    params={{ slug: agent.slug }}
+                    className="btn btn-ghost btn-xs"
+                  >
+                    View <ExternalLink size={12} />
+                  </Link>
+                </div>
+
+                {agent.error ? (
+                  <div className="text-error text-sm flex items-center gap-1">
+                    <XCircle size={14} /> Failed to fetch metrics
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-base-100 p-2 rounded flex flex-col">
+                        <span className="text-[10px] uppercase opacity-50 font-bold">
+                          Tokens (In/Out)
+                        </span>
+                        <span className="font-mono text-sm">
+                          {agent.usage?.input || 0} / {agent.usage?.output || 0}
+                        </span>
+                      </div>
+                      <div className="bg-base-100 p-2 rounded flex flex-col">
+                        <span className="text-[10px] uppercase opacity-50 font-bold">
+                          Workspace Storage
+                        </span>
+                        <span className="font-mono text-sm">
+                          {(agent.storageUsage / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <div className="badge badge-sm badge-outline gap-1">
+                        <Box size={10} /> {agent.fileCount} files
+                      </div>
+                      <div className="badge badge-sm badge-success gap-1">
+                        {agent.completedTasks} tasks done
+                      </div>
+                      {agent.activeTasks > 0 && (
+                        <div className="badge badge-sm badge-warning gap-1 animate-pulse">
+                          {agent.activeTasks} running
+                        </div>
+                      )}
+                      {agent.failedTasks > 0 && (
+                        <div className="badge badge-sm badge-error gap-1">
+                          {agent.failedTasks} failed
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4 md:col-span-2">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
             <Database className="w-5 h-5" /> AI Providers
           </h2>
           <div className="p-6 bg-base-200 rounded-lg border border-base-300">
@@ -121,9 +196,9 @@ function SystemStatusPage() {
               connections.
             </p>
             <div className="flex gap-2">
-              <button className="btn btn-sm btn-primary">
+              <Link to="/settings" className="btn btn-sm btn-primary">
                 Manage Providers
-              </button>
+              </Link>
             </div>
           </div>
         </section>

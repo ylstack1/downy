@@ -10,7 +10,6 @@ import {
 } from "react";
 
 import { transcribeAudio } from "../../lib/api-client";
-import { type SkillEntry } from "../../worker/agent/skills/types";
 
 interface Props {
   onSend: (text: string) => void;
@@ -29,7 +28,7 @@ interface Props {
    * Only meaningful when `draft` is non-null.
    */
   onCancelDraft?: () => void;
-  skills?: SkillEntry[];
+  skills?: any[];
 }
 
 // Auto-grow bounds. Start showing 2 lines so the textarea doesn't feel like a
@@ -373,7 +372,7 @@ export default function InputBox({
       {mentionSearch !== null && filteredSkills.length > 0 && (
         <div className="absolute bottom-full left-0 mb-2 w-64 rounded-lg border border-base-300 bg-base-100 p-1 shadow-xl z-50">
           <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider opacity-40 flex items-center gap-1.5">
-            <Sparkles size={10} /> Skills
+            <Sparkles size={10} /> Skills & Tools
           </div>
           <ul className="max-h-48 overflow-y-auto">
             {filteredSkills.map((s, i) => (
@@ -387,7 +386,14 @@ export default function InputBox({
                       : "hover:bg-base-200"
                   }`}
                 >
-                  <span className="font-bold">{s.name}</span>
+                  <div className="flex w-full items-center justify-between">
+                    <span className="font-bold">@{s.name}</span>
+                    {s.isMcp && (
+                      <span className="badge badge-xs badge-outline opacity-50">
+                        MCP
+                      </span>
+                    )}
+                  </div>
                   <span
                     className={`line-clamp-1 opacity-70 ${i === mentionIndex ? "" : "text-base-content/60"}`}
                   >

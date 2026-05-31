@@ -64,7 +64,7 @@ import {
   restoreHeaderAuthServer,
   type StoredMcpServer,
 } from "./mcp-reconnect";
-import { getAgent, listAgents } from "../db/profile";
+import { getAgent, listAgents, readPreferences } from "../db/profile";
 
 const BOOTSTRAP_SEEDED_KEY = "downy:bootstrap-seeded";
 
@@ -339,7 +339,9 @@ export class DownyAgent extends Think {
   }
 
   async #sendTelegramReply(chatId: string, text: string) {
-    const token = (this.env as any).TELEGRAM_BOT_TOKEN;
+    const [prefs] = await Promise.all([readPreferences(this.env.DB)]);
+    const token =
+      (prefs as any).telegram_bot_token || (this.env as any).TELEGRAM_BOT_TOKEN;
     if (!token) return;
 
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
