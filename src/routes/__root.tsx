@@ -10,11 +10,13 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, type ReactNode } from "react";
 
+import { useAgent } from "agents/react";
 import CommandPalette from "../components/CommandPalette";
 import ExaSetupWarning from "../components/ExaSetupWarning";
 import Header from "../components/Header";
+import AgentPanel from "../components/chat/AgentPanel";
 import { DialogHost } from "../components/ui/dialog";
-import { agentSlugFromPath, useAgentsQuery } from "../lib/agents";
+import { agentSlugFromPath, useAgentsQuery, useCurrentAgentSlug } from "../lib/agents";
 import { hydratePreferencesFromServer } from "../lib/preferences-sync";
 import { queryClient } from "../lib/query-client";
 import { THEMES } from "../lib/theme";
@@ -59,8 +61,11 @@ function RootDocument({ children }: { children: ReactNode }) {
           <div className="flex min-h-screen flex-col md:min-h-0 md:h-screen">
             <AgentRouteGuard />
             <Header />
-            <div className="flex-1 md:h-full md:flex-1 md:overflow-y-auto">
-              {children}
+            <div className="flex flex-1 min-h-0">
+              <ClientOnlyAgentPanel />
+              <div className="flex-1 md:h-full md:overflow-y-auto">
+                {children}
+              </div>
             </div>
           </div>
           <DialogHost />
@@ -82,6 +87,19 @@ function RootDocument({ children }: { children: ReactNode }) {
       </body>
     </html>
   );
+}
+
+function ClientOnlyAgentPanel() {
+  const slug = useCurrentAgentSlug();
+  const agent = useAgent({
+    agent: "DownyAgent",
+    name: `${slug}:default`,
+    protocol: window.location.protocol === "https:" ? "wss" : "ws",
+  });
+
+  // We only want the panel on desktop or when mobile is triggered.
+  // The panel itself handles desktop collapse and mobile drawer logic.
+  return <AgentPanel agent={agent} />;
 }
 
 function AgentRouteGuard() {

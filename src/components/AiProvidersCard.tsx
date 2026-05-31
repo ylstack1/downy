@@ -134,34 +134,38 @@ export default function AiProvidersCard() {
                   <option value="workers-ai">Cloudflare Workers AI</option>
                 </select>
               </div>
-              <div className="form-control md:col-span-2">
-                <label className="label text-xs font-bold uppercase opacity-60">
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  required={!editingId}
-                  value={formData.apiKey || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, apiKey: e.target.value })
-                  }
-                  className="input input-bordered input-sm"
-                  placeholder="sk-..."
-                />
-              </div>
-              <div className="form-control">
-                <label className="label text-xs font-bold uppercase opacity-60">
-                  Endpoint (Optional)
-                </label>
-                <input
-                  value={formData.endpoint || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endpoint: e.target.value })
-                  }
-                  className="input input-bordered input-sm"
-                  placeholder="https://api.openai.com/v1"
-                />
-              </div>
+              {formData.type !== "workers-ai" && (
+                <>
+                  <div className="form-control md:col-span-2">
+                    <label className="label text-xs font-bold uppercase opacity-60">
+                      API Key
+                    </label>
+                    <input
+                      type="password"
+                      required={!editingId}
+                      value={formData.apiKey || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, apiKey: e.target.value })
+                      }
+                      className="input input-bordered input-sm"
+                      placeholder="sk-..."
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label text-xs font-bold uppercase opacity-60">
+                      Endpoint (Optional)
+                    </label>
+                    <input
+                      value={formData.endpoint || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endpoint: e.target.value })
+                      }
+                      className="input input-bordered input-sm"
+                      placeholder="https://api.openai.com/v1"
+                    />
+                  </div>
+                </>
+              )}
               <div className="form-control">
                 <label className="label text-xs font-bold uppercase opacity-60">
                   Default Model ID

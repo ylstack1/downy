@@ -12,7 +12,7 @@ import {
 import { useCurrentAgentSlug } from "../../lib/agents";
 import { useAgentSkills, useMcpServers } from "../../lib/queries";
 import { alertDialog, confirmDialog } from "../ui/dialog";
-import AgentPanel from "./AgentPanel";
+// AgentPanel is now in the root layout
 import InputBox from "./InputBox";
 import MessageView, { turnHasSideEffects } from "./MessageView";
 import TodoList from "./TodoList";
@@ -421,7 +421,6 @@ export default function ChatPage({
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] w-full md:h-screen">
-      <AgentPanel agent={agent} />
       <main className="relative flex h-full w-full min-w-0 flex-col">
         {import.meta.env.DEV ? <DevResetButton /> : null}
         <div

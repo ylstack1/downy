@@ -140,23 +140,24 @@ export async function getModelFor(
   env: Cloudflare.Env,
   providerId: AiProvider,
 ): Promise<LanguageModel> {
+  // 1. Try to find a managed provider in D1 first (allows overriding built-ins)
+  const config = await getAiProvider(env.DB, providerId);
+  
+  if (config) {
+    if (config.type === "workers-ai") {
+      return createWorkersAI({ binding: env.AI }).chat(
+        config.modelId || env.MODEL_ID,
+      );
+    }
+    return createModelFromConfig(config);
+  }
+
+  // 2. Fall back to built-in registry
   if (isBuiltinAiProvider(providerId)) {
     return BUILTIN_REGISTRY[providerId](env);
   }
 
-  // Dynamic provider from D1
-  const config = await getAiProvider(env.DB, providerId);
-  if (!config) {
-    throw new Error(`Unknown AI provider: ${providerId}`);
-  }
-
-  if (config.type === "workers-ai") {
-    return createWorkersAI({ binding: env.AI }).chat(
-      config.modelId || env.MODEL_ID,
-    );
-  }
-
-  return createModelFromConfig(config);
+  throw new Error(`Unknown AI provider: ${providerId}`);
 }
 
 function createModelFromConfig(config: AiProviderRecord): LanguageModel {

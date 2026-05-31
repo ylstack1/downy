@@ -9,6 +9,7 @@ import {
   useTelegramBotToken,
   useTelegramWhitelist,
 } from "../lib/preferences";
+import { useProviders } from "../lib/queries";
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   kimi: "Kimi K2.6 (Workers AI)",
@@ -22,6 +23,8 @@ export default function PreferencesCard() {
   const [aiProvider, setAiProvider] = useAiProvider();
   const [telegramToken, setTelegramToken] = useTelegramBotToken();
   const [telegramWhitelist, setTelegramWhitelist] = useTelegramWhitelist();
+  const { data: providersData } = useProviders();
+  const managedProviders = (providersData as any)?.providers || [];
 
   return (
     <div className="space-y-6">
@@ -56,11 +59,22 @@ export default function PreferencesCard() {
                 if (isAiProvider(next)) setAiProvider(next);
               }}
             >
-              {AI_PROVIDERS.map((p) => (
-                <option key={p} value={p}>
-                  {PROVIDER_LABELS[p]}
-                </option>
-              ))}
+              <optgroup label="Built-in Providers">
+                {AI_PROVIDERS.map((p) => (
+                  <option key={p} value={p}>
+                    {PROVIDER_LABELS[p]}
+                  </option>
+                ))}
+              </optgroup>
+              {managedProviders.length > 0 && (
+                <optgroup label="Custom Providers">
+                  {managedProviders.map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.type})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </label>
         </div>
