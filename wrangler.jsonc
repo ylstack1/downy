@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "downy",
+  "name": "downy-new",
   "main": "dist/server/server.js",
   "assets": {
     "directory": "dist/client",
